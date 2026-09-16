@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
+import Notification from './components/Notification'
 import personService from './services/persons'
 
 const App = () => {
@@ -9,12 +10,20 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
+  const [notification, setNotification] = useState(null)
 
   useEffect(() => {
     personService.getAll().then(initialPersons => {
       setPersons(initialPersons)
     })
   }, [])
+
+  const notify = (message, type = 'success') => {
+    setNotification({ message, type })
+    setTimeout(() => {
+      setNotification(null)
+    }, 5000)
+  }
 
   const addPerson = (event) => {
     event.preventDefault()
@@ -28,8 +37,13 @@ const App = () => {
           .then(returnedPerson => {
             setPersons(persons.map(person =>
               person.id !== existing.id ? person : returnedPerson))
+            notify(`Changed the number of ${returnedPerson.name}`)
             setNewName('')
             setNewNumber('')
+          })
+          .catch(() => {
+            notify(`Information of ${existing.name} has already been removed from server`, 'error')
+            setPersons(persons.filter(person => person.id !== existing.id))
           })
       }
       return
@@ -41,6 +55,7 @@ const App = () => {
     }
     personService.create(personObject).then(returnedPerson => {
       setPersons(persons.concat(returnedPerson))
+      notify(`Added ${returnedPerson.name}`)
       setNewName('')
       setNewNumber('')
     })
@@ -51,6 +66,7 @@ const App = () => {
     if (window.confirm(`Delete ${person.name}?`)) {
       personService.remove(id).then(() => {
         setPersons(persons.filter(p => p.id !== id))
+        notify(`Deleted ${person.name}`)
       })
     }
   }
@@ -67,6 +83,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification notification={notification} />
       <Filter value={filter} onChange={handleFilterChange} />
       <h3>Add a new</h3>
       <PersonForm
