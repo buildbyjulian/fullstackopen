@@ -4,6 +4,7 @@ const morgan = require('morgan')
 
 const app = express()
 
+app.use(express.static('dist'))
 app.use(express.json())
 
 // 3.8: log the request body for POST requests
@@ -47,6 +48,19 @@ app.get('/api/persons/:id', (request, response) => {
 app.delete('/api/persons/:id', (request, response) => {
   persons = persons.filter((p) => p.id !== request.params.id)
   response.status(204).end()
+})
+
+// update the number of an existing person
+app.put('/api/persons/:id', (request, response) => {
+  const body = request.body
+  const person = persons.find((p) => p.id === request.params.id)
+
+  if (!person) {
+    return response.status(404).end()
+  }
+
+  person.number = body.number
+  response.json(person)
 })
 
 const generateId = () => String(Math.floor(Math.random() * 1_000_000))
